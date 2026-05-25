@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Student Predictor | Live KNN Performance Prediction</title>
+    <meta name="description" content="Futuristic AI-powered Student Performance Prediction System using KNN Regression with live Flask backend predictions." />
+    <style>
+        :root {
+            --bg-1: #070b1b;
+            --bg-2: #0a1130;
+            --bg-3: #151046;
+            --neon-cyan: #2cf4ff;
+            --neon-blue: #448bff;
+            --neon-purple: #9a5cff;
+            --text-main: #eaf1ff;
+            --text-muted: #a7b4d4;
+            --glass-bg: rgba(255, 255, 255, 0.06);
+            --glass-border: rgba(255, 255, 255, 0.16);
+            --shadow-neon: 0 0 24px rgba(44, 244, 255, 0.28), 0 0 40px rgba(154, 92, 255, 0.2);
+            --radius-xl: 24px;
+            --radius-lg: 16px;
+            --radius-md: 12px;
+            --max-width: 1200px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: "Segoe UI", "SF Pro Text", "Poppins", sans-serif;
+            color: var(--text-main);
+            min-height: 100vh;
+            background:
+                radial-gradient(circle at 10% 10%, rgba(68, 139, 255, 0.24), transparent 40%),
+                radial-gradient(circle at 80% 0%, rgba(154, 92, 255, 0.22), transparent 38%),
+                linear-gradient(140deg, var(--bg-1), var(--bg-2) 42%, var(--bg-3));
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        #particles {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+            opacity: 0.9;
+        }
+
+        .floating-shape {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(2px);
+            pointer-events: none;
+            z-index: 1;
+            animation: floatShape 10s ease-in-out infinite alternate;
+        }
+
+        .shape-1 {
+            width: 180px;
+            height: 180px;
+            top: 12%;
+            left: -40px;
+            background: radial-gradient(circle, rgba(44, 244, 255, 0.32), transparent 70%);
+            animation-delay: 0.5s;
+        }
+
+        .shape-2 {
+            width: 210px;
+            height: 210px;
+            top: 48%;
+            right: -80px;
+            background: radial-gradient(circle, rgba(154, 92, 255, 0.33), transparent 70%);
+            animation-delay: 1.2s;
+        }
+
+        .shape-3 {
+            width: 140px;
+            height: 140px;
+            bottom: 6%;
+            left: 30%;
+            background: radial-gradient(circle, rgba(68, 139, 255, 0.3), transparent 70%);
+            animation-delay: 2s;
+        }
+
+        @keyframes floatShape {
+            from { transform: translateY(0) translateX(0) scale(1); }
+            to { transform: translateY(-24px) translateX(20px) scale(1.06); }
+        }
+
+        .page-wrap {
+            position: relative;
+            z-index: 2;
+        }
+
+        .container {
+            width: min(92%, var(--max-width));
+            margin: 0 auto;
+        }
+
+        .glass {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            box-shadow: 0 12px 35px rgba(2, 8, 24, 0.35);
+        }
+
+        .navbar {
+            position: sticky;
+            top: 14px;
+            z-index: 30;
+            margin: 16px auto 0;
+            border-radius: 999px;
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .brand {
+            font-weight: 700;
+            letter-spacing: 0.4px;
+            color: #fff;
+            text-shadow: 0 0 16px rgba(44, 244, 255, 0.35);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 18px;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.95rem;
+            transition: 0.25s ease;
+        }
+
+        .nav-links a:hover {
+            color: #fff;
+            text-shadow: 0 0 14px rgba(154, 92, 255, 0.7);
+        }
+
+        section {
+            padding: 84px 0;
+        }
+
+        .hero {
+            padding-top: 110px;
+            text-align: center;
+        }
+
+        .hero-card {
+            border-radius: var(--radius-xl);
+            padding: clamp(32px, 5vw, 62px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-card::before {
+            content: "";
+            position: absolute;
+            width: 180%;
+            height: 180%;
+            top: -50%;
+            left: -40%;
+            background: conic-gradient(from 180deg at 50% 50%, rgba(44, 244, 255, 0.15), rgba(154, 92, 255, 0.16), rgba(68, 139, 255, 0.14), rgba(44, 244, 255, 0.15));
+            animation: spin 9s linear infinite;
+            z-index: -2;
+        }
+
+        .hero-card::after {
+            content: "";
+            position: absolute;
+            inset: 2px;
+            border-radius: calc(var(--radius-xl) - 2px);
+            background: linear-gradient(140deg, rgba(9, 16, 39, 0.93), rgba(13, 18, 46, 0.92));
+            z-index: -1;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .hero h1 {
+            font-size: clamp(1.8rem, 4.8vw, 3.5rem);
+            line-height: 1.15;
+            margin-bottom: 14px;
+            text-wrap: balance;
+        }
+
+        .hero p {
+            font-size: clamp(0.95rem, 2.2vw, 1.15rem);
+            color: var(--text-muted);
+            max-width: 760px;
+            margin: 0 auto 30px;
+        }
+
+        .btn-primary {
+            border: none;
+            color: #fff;
+            font-weight: 600;
+            padding: 13px 24px;
+            border-radius: 999px;
+            cursor: pointer;
+            background: linear-gradient(135deg, var(--neon-blue), var(--neon-purple));
+            box-shadow: var(--shadow-neon);
+            transition: transform 0.25s ease, box-shadow 0.25s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px) scale(1.03);
+            box-shadow: 0 0 26px rgba(68, 139, 255, 0.45), 0 0 44px rgba(154, 92, 255, 0.38);
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: clamp(1.5rem, 3.3vw, 2.2rem);
+            margin-bottom: 14px;
+        }
+
+        .section-subtitle {
+            text-align: center;
+            color: var(--text-muted);
+            max-width: 700px;
+            margin: 0 auto 42px;
+        }
+
+        .predict-grid {
+            display: grid;
+            gap: 28px;
+            grid-template-columns: repeat(12, 1fr);
+            align-items: start;
+        }
+
+        .predict-form-card,
+        .result-card {
+            grid-column: span 12;
+            border-radius: var(--radius-xl);
+            padding: clamp(20px, 3vw, 30px);
+            transform-style: preserve-3d;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .predict-form-card:hover,
+        .result-card:hover {
+            transform: rotateX(2deg) rotateY(-2deg) translateY(-4px);
+            box-shadow: 0 16px 45px rgba(44, 244, 255, 0.16);
+        }
+
+        @media (min-width: 900px) {
+            .predict-form-card { grid-column: span 7; }
+            .result-card { grid-column: span 5; }
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+
+        @media (min-width: 640px) {
+            .form-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+        }
+
+        label {
+            color: #dce7ff;
+            font-size: 0.92rem;
+        }
+
+        input {
+            width: 100%;
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: var(--radius-md);
+            color: #fff;
+            padding: 12px 13px;
+            outline: none;
+            transition: 0.25s ease;
+        }
+
+        input:focus {
+            border-color: var(--neon-cyan);
+            box-shadow: 0 0 0 3px rgba(44, 244, 255, 0.2);
+        }
+
+        .full {
+            grid-column: 1 / -1;
+        }
+
+        .predict-btn {
+            width: 100%;
+            margin-top: 4px;
+        }
+
+        .spinner {
+            width: 38px;
+            height: 38px;
+            border: 3px solid rgba(255, 255, 255, 0.2);
+            border-top-color: var(--neon-cyan);
+            border-radius: 50%;
+            animation: spin 0.9s linear infinite;
+            margin: 12px auto 18px;
+            display: none;
+        }
+
+        .result-card h3 {
+            margin-bottom: 14px;
+            color: #fff;
+        }
+
+        .result-output {
+            min-height: 110px;
+            border-radius: var(--radius-lg);
+            border: 1px dashed rgba(255, 255, 255, 0.24);
+            background: rgba(0, 0, 0, 0.2);
+            padding: 18px;
+            line-height: 1.7;
+            color: #d9e8ff;
+            opacity: 0;
+            transform: translateY(8px);
+            transition: 0.35s ease;
+        }
+
+        .result-output.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .features-grid {
+            display: grid;
+            gap: 18px;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        }
+
+        .feature-card {
+            border-radius: var(--radius-lg);
+            padding: 22px;
+            transition: transform 0.28s ease, box-shadow 0.28s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            padding: 1px;
+            background: linear-gradient(130deg, rgba(44, 244, 255, 0.55), rgba(154, 92, 255, 0.45), rgba(68, 139, 255, 0.45));
+            -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            pointer-events: none;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 14px 32px rgba(154, 92, 255, 0.24);
+        }
+
+        .feature-card h4 {
+            margin-bottom: 9px;
+            color: #f4f7ff;
+        }
+
+        .feature-card p {
+            color: var(--text-muted);
+            font-size: 0.96rem;
+            line-height: 1.6;
+        }
+
+        .about-card {
+            border-radius: var(--radius-xl);
+            padding: clamp(22px, 3.5vw, 34px);
+            line-height: 1.8;
+            color: #d8e5ff;
+        }
+
+        .about-card strong {
+            color: #fff;
+        }
+
+        footer {
+            margin: 30px auto 20px;
+            width: min(92%, var(--max-width));
+            text-align: center;
+            color: #9fb2d7;
+            padding: 20px;
+            border-radius: 999px;
+            font-size: 0.93rem;
+        }
+
+        .reveal {
+            opacity: 0;
+            transform: translateY(22px);
+            transition: opacity 0.65s ease, transform 0.65s ease;
+        }
+
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        @media (max-width: 780px) {
+            .navbar {
+                border-radius: 18px;
+                padding: 14px;
+                flex-direction: column;
+                gap: 10px;
+            }
+            .nav-links {
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 10px 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="particles"></canvas>
+    <div class="floating-shape shape-1"></div>
+    <div class="floating-shape shape-2"></div>
+    <div class="floating-shape shape-3"></div>
+
+    <div class="page-wrap">
+        <header class="container">
+            <nav class="navbar glass">
+                <div class="brand">AI Student Predictor</div>
+                <ul class="nav-links">
+                    <li><a href="#home">Home</a></li>
+                    <li><a href="#features">Features</a></li>
+                    <li><a href="#predict">Predict</a></li>
+                    <li><a href="#about">About</a></li>
+                </ul>
+            </nav>
+        </header>
+
+        <main>
+            <section id="home" class="hero container reveal">
+                <article class="hero-card glass">
+                    <h1>Predict Student Performance Using Machine Learning</h1>
+                    <p>KNN Regression model trained using student performance dataset for live academic score prediction.</p>
+                    <a href="#predict"><button class="btn-primary">Start Prediction</button></a>
+                </article>
+            </section>
+
+            <section id="predict" class="container reveal">
+                <h2 class="section-title">Live Performance Prediction</h2>
+                <p class="section-subtitle">Enter all trained model features below to run real-time prediction from Flask backend using your saved <code>best_salary_model.pkl</code>.</p>
+                <div class="predict-grid">
+                    <article class="predict-form-card glass">
+                        <form id="predictionForm" novalidate>
+                            <div class="form-grid">
+                                <div class="field">
+                                    <label for="student_id">Student ID</label>
+                                    <input type="number" id="student_id" min="0" step="1" required placeholder="e.g. 1205" />
+                                </div>
+                                <div class="field">
+                                    <label for="age">Age</label>
+                                    <input type="number" id="age" min="1" max="100" step="1" required placeholder="e.g. 18" />
+                                </div>
+                                <div class="field">
+                                    <label for="study_time_weekly">Study Time Weekly (Hours)</label>
+                                    <input type="number" id="study_time_weekly" min="0" step="0.1" required placeholder="e.g. 12.5" />
+                                </div>
+                                <div class="field">
+                                    <label for="absences">Absences</label>
+                                    <input type="number" id="absences" min="0" step="1" required placeholder="e.g. 4" />
+                                </div>
+                                <div class="field">
+                                    <label for="tutoring">Tutoring (0/1)</label>
+                                    <input type="number" id="tutoring" min="0" max="1" step="1" required placeholder="e.g. 1" />
+                                </div>
+                                <div class="field">
+                                    <label for="parental_support">Parental Support (0-4)</label>
+                                    <input type="number" id="parental_support" min="0" max="4" step="1" required placeholder="e.g. 3" />
+                                </div>
+                                <div class="field">
+                                    <label for="extracurricular">Extracurricular (0/1)</label>
+                                    <input type="number" id="extracurricular" min="0" max="1" step="1" required placeholder="e.g. 1" />
+                                </div>
+                                <div class="field">
+                                    <label for="sports">Sports (0/1)</label>
+                                    <input type="number" id="sports" min="0" max="1" step="1" required placeholder="e.g. 0" />
+                                </div>
+                                <div class="field">
+                                    <label for="music">Music (0/1)</label>
+                                    <input type="number" id="music" min="0" max="1" step="1" required placeholder="e.g. 1" />
+                                </div>
+                                <div class="field full">
+                                    <label for="grade_class">Grade Class (0-4)</label>
+                                    <input type="number" id="grade_class" min="0" max="4" step="1" required placeholder="e.g. 2" />
+                                </div>
+                                <div class="full">
+                                    <button type="submit" class="btn-primary predict-btn">Predict Performance</button>
+                                </div>
+                            </div>
+                        </form>
+                    </article>
+
+                    <aside class="result-card glass">
+                        <h3>Prediction Console</h3>
+                        <div id="spinner" class="spinner"></div>
+                        <div id="result" class="result-output">Prediction output will appear here after you click <strong>Predict Performance</strong>.</div>
+                    </aside>
+                </div>
+            </section>
+
+            <section id="features" class="container reveal">
+                <h2 class="section-title">System Features</h2>
+                <p class="section-subtitle">Designed for practical ML deployment with a futuristic, interactive experience.</p>
+                <div class="features-grid">
+                    <article class="feature-card glass">
+                        <h4>Best K-value Selection</h4>
+                        <p>Model performance was evaluated across K values from 1 to 15 to identify the most optimal fit for prediction quality.</p>
+                    </article>
+                    <article class="feature-card glass">
+                        <h4>KNN Regression Core</h4>
+                        <p>The system uses K-Nearest Neighbors Regression for robust estimation based on similar student patterns.</p>
+                    </article>
+                    <article class="feature-card glass">
+                        <h4>Live Flask API</h4>
+                        <p>Frontend communicates with Flask backend using Fetch API for real-time prediction from the saved <code>.pkl</code> model.</p>
+                    </article>
+                    <article class="feature-card glass">
+                        <h4>Accurate Estimation</h4>
+                        <p>Multiple student factors are combined to produce performance mark prediction for academic guidance and analysis.</p>
+                    </article>
+                    <article class="feature-card glass">
+                        <h4>Interactive AI Dashboard</h4>
+                        <p>Modern glassmorphism UI, dynamic animations, and responsive layout offer a premium AI system experience.</p>
+                    </article>
+                </div>
+            </section>
+
+            <section id="about" class="container reveal">
+                <h2 class="section-title">About The Model</h2>
+                <article class="about-card glass">
+                    <p><strong>KNN Regression</strong> predicts a target value by averaging outcomes of the nearest data points in feature space. For this project, the model was trained on student-related attributes using <code>Student_performance_data.csv</code>.</p>
+                    <p>The training workflow tested <strong>K values from 1 to 15</strong> and selected the best performer as the final model. That best trained model was saved as <code>best_salary_model.pkl</code>.</p>
+                    <p>During live usage, the Flask backend loads this saved model and returns prediction results to this frontend via the <code>/predict</code> API endpoint in real time.</p>
+                </article>
+            </section>
+        </main>
+
+        <footer class="glass">Built using Machine Learning, Flask, HTML, CSS and JavaScript</footer>
+    </div>
+
+    <script>
+        // Scroll reveal animation
+        const revealObserver = new IntersectionObserver((entries) => {
+            entries.forEach((entry) => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add("active");
+                }
+            });
+        }, { threshold: 0.14 });
+
+        document.querySelectorAll(".reveal").forEach((el) => revealObserver.observe(el));
+
+        // Lightweight animated particles background
+        const canvas = document.getElementById("particles");
+        const ctx = canvas.getContext("2d");
+        let particles = [];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            createParticles();
+        }
+
+        function createParticles() {
+            const count = Math.min(110, Math.floor((canvas.width * canvas.height) / 18000));
+            particles = Array.from({ length: count }, () => ({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                r: Math.random() * 1.8 + 0.5,
+                dx: (Math.random() - 0.5) * 0.35,
+                dy: (Math.random() - 0.5) * 0.35,
+                hue: Math.random() > 0.5 ? 190 : 265
+            }));
+        }
+
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach((p) => {
+                p.x += p.dx;
+                p.y += p.dy;
+
+                if (p.x < 0 || p.x > canvas.width) p.dx *= -1;
+                if (p.y < 0 || p.y > canvas.height) p.dy *= -1;
+
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                ctx.fillStyle = p.hue === 190 ? "rgba(44, 244, 255, 0.7)" : "rgba(154, 92, 255, 0.65)";
+                ctx.fill();
+            });
+
+            requestAnimationFrame(animateParticles);
+        }
+
+        window.addEventListener("resize", resizeCanvas);
+        resizeCanvas();
+        animateParticles();
+
+        const form = document.getElementById("predictionForm");
+        const resultEl = document.getElementById("result");
+        const spinner = document.getElementById("spinner");
+
+        function setResult(message, isError = false) {
+            resultEl.innerHTML = message;
+            resultEl.style.color = isError ? "#ff9db4" : "#d9e8ff";
+            resultEl.classList.add("show");
+        }
+
+        async function predictPerformance() {
+            const student_id = document.getElementById("student_id").value;
+            const age = document.getElementById("age").value;
+            const study_time_weekly = document.getElementById("study_time_weekly").value;
+            const absences = document.getElementById("absences").value;
+            const tutoring = document.getElementById("tutoring").value;
+            const parental_support = document.getElementById("parental_support").value;
+            const extracurricular = document.getElementById("extracurricular").value;
+            const sports = document.getElementById("sports").value;
+            const music = document.getElementById("music").value;
+            const grade_class = document.getElementById("grade_class").value;
+
+            spinner.style.display = "block";
+            resultEl.classList.remove("show");
+
+            try {
+                const response = await fetch("http://127.0.0.1:5000/predict", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        student_id: student_id,
+                        age: age,
+                        study_time_weekly: study_time_weekly,
+                        absences: absences,
+                        tutoring: tutoring,
+                        parental_support: parental_support,
+                        extracurricular: extracurricular,
+                        sports: sports,
+                        music: music,
+                        grade_class: grade_class
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Server error: ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                setResult(`Predicted Student Performance: <strong>${data.prediction}</strong>`);
+            } catch (error) {
+                setResult(`Unable to fetch live prediction. Please ensure Flask server is running at <code>http://127.0.0.1:5000</code>.`, true);
+            } finally {
+                spinner.style.display = "none";
+            }
+        }
+
+        form.addEventListener("submit", async (event) => {
+            event.preventDefault();
+
+            const requiredIds = [
+                "student_id",
+                "age",
+                "study_time_weekly",
+                "absences",
+                "tutoring",
+                "parental_support",
+                "extracurricular",
+                "sports",
+                "music",
+                "grade_class"
+            ];
+            const missing = requiredIds.some((id) => !document.getElementById(id).value.trim());
+            if (missing) {
+                setResult("Please fill all input fields before prediction.", true);
+                return;
+            }
+
+            await predictPerformance();
+        });
+    </script>
+</body>
+</html>
